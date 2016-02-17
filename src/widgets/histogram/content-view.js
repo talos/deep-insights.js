@@ -139,6 +139,11 @@ module.exports = cdb.core.View.extend({
       this._setupBindings();
       this.$el.toggleClass('is-collapsed', !!this.model.get('collapsed'));
       this._initViews();
+
+      if (!this.model.get('collapsed')) {
+        // Trigger events to force update values
+        this.model.trigger('change:avg change:min change:max change:total change:null');
+      }
     }
 
     return this;
