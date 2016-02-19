@@ -88,6 +88,7 @@ module.exports = cdb.core.View.extend({
     var labelsMargin = this.model.get('showLabels')
       ? this.options.labelsMargin
       : 0;
+
     return this.model.get('height') - m.top - m.bottom - labelsMargin;
   },
 
@@ -440,7 +441,7 @@ module.exports = cdb.core.View.extend({
       data: this.options.data,
       height: this.options.height,
       display: true,
-      show_shadow_bars: this.options.shadowData,
+      show_shadow_bars: this.options.displayShadowBars,
       margin: _.clone(this.options.margin),
       width: 0, // will be set on resize listener
       pos: { x: 0, y: 0 }
@@ -467,11 +468,31 @@ module.exports = cdb.core.View.extend({
     this._onWindowResize();
   },
 
-  _setupScales: function () {
-    var data = this.model.get('data');
+  _getXScale: function () {
+    return d3.scale.linear().domain([0, 100]).range([0, this.chartWidth()]);
+  },
 
-    this.xScale = d3.scale.linear().domain([0, 100]).range([0, this.chartWidth()]);
-    this.yScale = d3.scale.linear().domain([0, d3.max(data, function (d) { return _.isEmpty(d) ? 0 : d.freq; })]).range([this.chartHeight(), 0]);
+  _getYScale: function () {
+    var data = this.model.get('data');
+    return d3.scale.linear().domain([0, d3.max(data, function (d) { return _.isEmpty(d) ? 0 : d.freq; })]).range([this.chartHeight(), 0]);
+  },
+
+  updateYScale: function () {
+    this.yScale = this._getYScale();
+  },
+
+  resetYScale: function () {
+    this.yScale = this._originalYScale;
+  },
+
+  _setupScales: function () {
+    this.xScale = this._getXScale();
+
+    if (!this._originalYScale) {
+      this._originalYScale = this.yScale = this._getYScale();
+    }
+
+    var data = this.model.get('data');
 
     if (!data || !data.length) {
       return;
@@ -993,7 +1014,7 @@ module.exports = cdb.core.View.extend({
   },
 
   _generateShadowBars: function () {
-    var data = this.options.shadowData;
+    var data = this.model.get('data');
 
     if (!data || !data.length || !this.model.get('show_shadow_bars')) {
       this._removeShadowBars();
@@ -1005,6 +1026,7 @@ module.exports = cdb.core.View.extend({
     var self = this;
 
     var yScale = d3.scale.linear().domain([0, d3.max(data, function (d) { return _.isEmpty(d) ? 0 : d.freq; })]).range([this.chartHeight(), 0]);
+
     var barWidth = this.chartWidth() / data.length;
 
     this.chart.append('g')

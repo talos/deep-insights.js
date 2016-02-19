@@ -97,12 +97,68 @@ describe('widgets/histogram/content-view', function () {
     };
 
     spyOn(this.view, '_updateStats').and.callThrough();
-    spyOn(this.view, '_onChangeModel').and.callThrough();
+    spyOn(this.view, '_onHistogramDataChanged').and.callThrough();
     this.dataviewModel.fetch();
     this.dataviewModel._data.reset(genHistogramData(20));
     this.dataviewModel.trigger('change:data');
-    expect(this.view._onChangeModel).toHaveBeenCalled();
+    expect(this.view._onHistogramDataChanged).toHaveBeenCalled();
     expect(this.view._updateStats).toHaveBeenCalled();
+  });
+
+  it('should enable and disable filters on the dataviewModel when zooming in and out', function () {
+    var histogramData = {
+      'bin_width': 10,
+      'bins_count': 2,
+      'bins_start': 1,
+      'nulls': 0,
+      'bins': []
+    };
+
+    this.dataviewModel.sync = function (method, model, options) {
+      options.success(histogramData);
+    };
+
+    this.dataviewModel.fetch();
+
+    expect(this.dataviewModel.get('start')).toEqual(1);
+    expect(this.dataviewModel.get('end')).toEqual(21);
+    expect(this.dataviewModel.get('bins')).toEqual(2);
+
+    spyOn(this.dataviewModel, 'enableFilter');
+
+    // Click ZOOM
+    this.view.$el.find('.js-zoom').click();
+
+    expect(this.dataviewModel.enableFilter).toHaveBeenCalled();
+
+    spyOn(this.dataviewModel, 'disableFilter');
+
+    // Click CLEAR
+    this.view.$el.find('.js-clear').click();
+
+    expect(this.dataviewModel.disableFilter).toHaveBeenCalled();
+  });
+
+  it('should replace the data of the histogramChartView when user zooms in', function () {
+    var i = 0;
+    this.dataviewModel.sync = function (method, model, options) {
+      options.success({
+        'bin_width': 10,
+        'bins_count': 2,
+        'bins_start': i++,
+        'nulls': 0,
+        'bins': []
+      });
+    };
+
+    this.dataviewModel.fetch();
+
+    spyOn(this.view.histogramChartView, 'replaceData');
+
+    // Click ZOOM
+    this.view.$el.find('.js-zoom').click();
+
+    expect(this.view.histogramChartView.replaceData).toHaveBeenCalled();
   });
 
   it('should update the stats values', function () {
@@ -118,6 +174,34 @@ describe('widgets/histogram/content-view', function () {
     expect(this.widgetModel.get('max')).not.toBe(0);
     expect(this.widgetModel.get('avg')).not.toBe(0);
     expect(this.widgetModel.get('total')).not.toBe(0);
+  });
+
+  it('should show stats when show_stats is true', function () {
+    expect(this.view.$('.CDB-Widget-info').length).toBe(0);
+    this.widgetModel.set('show_stats', true);
+    this.view.render();
+    expect(this.view.$('.CDB-Widget-info').length).toBe(1);
+  });
+
+  it('should update data of the mini histogram if there is a bins change and it is not zoomed', function () {
+    var i = 0;
+    this.dataviewModel.sync = function (method, model, options) {
+      options.success({
+        'bin_width': 10,
+        'bins_count': 2,
+        'bins_start': i++,
+        'nulls': 0,
+        'bins': []
+      });
+    };
+
+    this.dataviewModel.fetch();
+
+    spyOn(this.view, '_isZoomed').and.returnValue(false);
+    spyOn(this.view.miniHistogramChartView, 'replaceData');
+    // Change data
+    this.dataviewModel.update({bins: 10});
+    expect(this.view.miniHistogramChartView.replaceData).toHaveBeenCalled();
   });
 
   afterEach(function () {
