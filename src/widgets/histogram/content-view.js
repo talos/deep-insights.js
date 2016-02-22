@@ -1,5 +1,6 @@
 var _ = require('underscore');
 var cdb = require('cartodb.js');
+var Backbone = require('backbone');
 var formatter = require('../../formatter');
 var HistogramTitleView = require('./histogram-title-view');
 var HistogramChartView = require('./chart');
@@ -25,6 +26,7 @@ module.exports = cdb.core.View.extend({
   },
 
   initialize: function () {
+    this._originalData = new Backbone.Collection();
     this._dataviewModel = this.model.dataviewModel;
     this.filter = this._dataviewModel.filter;
     this.lockedByUser = false;
@@ -32,13 +34,7 @@ module.exports = cdb.core.View.extend({
   },
 
   _initViews: function () {
-    var titleView = new HistogramTitleView({
-      widgetModel: this.model,
-      dataviewModel: this._dataviewModel
-    });
-
-    this.$('.js-title').html(titleView.render().el);
-    this.addView(titleView);
+    this._initTitleView();
 
     var dropdown = new DropdownView({
       target: this.$('.js-actions'),
@@ -55,6 +51,16 @@ module.exports = cdb.core.View.extend({
 
     this._renderMiniChart();
     this._renderMainChart();
+  },
+
+  _initTitleView: function () {
+    var titleView = new HistogramTitleView({
+      widgetModel: this.model,
+      dataviewModel: this._dataviewModel
+    });
+
+    this.$('.js-title').append(titleView.render().el);
+    this.addView(titleView);
   },
 
   _initBinds: function () {
@@ -91,8 +97,10 @@ module.exports = cdb.core.View.extend({
         this.zoomedData = this._dataviewModel.getData();
       } else {
         this.histogramChartView.showShadowBars();
-        this.originalData = this._dataviewModel.getData();
-        this.miniHistogramChartView.replaceData(this.originalData);
+        if (this._originalData.isEmpty()) {
+          this._originalData.reset(this._dataviewModel.getData());
+        }
+        this.miniHistogramChartView.replaceData(this._dataviewModel.getData());
       }
       this.histogramChartView.replaceData(this._dataviewModel.getData());
     }
@@ -125,8 +133,9 @@ module.exports = cdb.core.View.extend({
 
     if (isDataEmpty) {
       this._addPlaceholder();
+      this._initTitleView();
     } else {
-      this.originalData = this._dataviewModel.getData();
+      this._originalData.reset(this._dataviewModel.getData());
       this._setupBindings();
       this.$el.toggleClass('is-collapsed', !!this.model.get('collapsed'));
       this._initViews();
@@ -142,7 +151,7 @@ module.exports = cdb.core.View.extend({
 
   _unsetRange: function () {
     this.unsettingRange = false;
-    this.histogramChartView.replaceData(this.originalData);
+    this.histogramChartView.replaceData(this._dataviewModel.getData());
     this.model.set({ lo_index: null, hi_index: null });
 
     if (!this._isZoomed()) {
@@ -163,6 +172,7 @@ module.exports = cdb.core.View.extend({
       width: this.canvasWidth,
       height: this.defaults.chartHeight,
       data: this._dataviewModel.getData(),
+      originalData: this._originalData,
       displayShadowBars: true
     }));
 
@@ -193,6 +203,7 @@ module.exports = cdb.core.View.extend({
   },
 
   _setupBindings: function () {
+    this._dataviewModel.bind('change:bins', this._onChangeBins, this);
     this.model.bind('change:zoomed', this._onChangeZoomed, this);
     this.model.bind('change:zoom_enabled', this._onChangeZoomEnabled, this);
     this.model.bind('change:filter_enabled', this._onChangeFilterEnabled, this);
@@ -229,7 +240,7 @@ module.exports = cdb.core.View.extend({
     this._clearTooltip();
     this.histogramChartView.removeSelection();
 
-    var data = this.originalData;
+    var data = this._originalData.toJSON();
 
     if (loBarIndex >= 0 && loBarIndex < data.length && (hiBarIndex - 1) >= 0 && (hiBarIndex - 1) < data.length) {
       this.filter.setRange(
@@ -297,6 +308,10 @@ module.exports = cdb.core.View.extend({
     this.$('.js-filter').toggleClass('is-hidden', !this.model.get('filter_enabled'));
   },
 
+  _onChangeBins: function () {
+    this._originalData.reset([]); // Clean originalData
+  },
+
   _onChangeZoomEnabled: function () {
     this.$('.js-zoom').toggleClass('is-hidden', !this.model.get('zoom_enabled'));
   },
@@ -348,7 +363,7 @@ module.exports = cdb.core.View.extend({
   },
 
   _updateStats: function () {
-    var data = this.originalData;
+    var data = this._originalData.toJSON();
 
     if (this._isZoomed()) {
       data = this.zoomedData;
