@@ -134,6 +134,9 @@ module.exports = cdb.core.View.extend({
         max: formatter.formatNumber(this.model.get('max'))
       })
     );
+    // Force refresh buttons state.
+    this._onChangeFilterEnabled();
+    this._onChangeZoomEnabled();
 
     if (isDataEmpty) {
       this._addPlaceholder();
