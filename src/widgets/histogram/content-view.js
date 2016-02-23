@@ -127,7 +127,11 @@ module.exports = cdb.core.View.extend({
       template({
         title: this.model.get('title'),
         showStats: this.model.get('show_stats'),
-        itemsCount: !isDataEmpty ? data.length : '-'
+        itemsCount: !isDataEmpty ? data.length : '-',
+        nulls: formatter.formatNumber(this.model.get('nulls')),
+        min: formatter.formatNumber(this.model.get('min')),
+        avg: formatter.formatNumber(this.model.get('avg')),
+        max: formatter.formatNumber(this.model.get('max'))
       })
     );
 
