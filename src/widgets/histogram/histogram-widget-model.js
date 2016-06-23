@@ -40,6 +40,7 @@ module.exports = WidgetModel.extend({
 
   cancelAutoStyle: function () {
     this.dataviewModel.layer.restoreCartoCSS();
+    this.autoStyler.set('palette', null);
     this.set('autoStyle', false);
   }
 
