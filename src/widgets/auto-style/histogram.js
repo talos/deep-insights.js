@@ -34,33 +34,43 @@ var HistogramAutoStyler = AutoStyler.extend({
   _getHistGeometry: function (geometryType) {
     var style = this.STYLE_TEMPLATE[geometryType];
     var shape = this.dataviewModel.getDistributionType();
+    var palette;
     if (geometryType === 'polygon') {
       if (shape === 'F') {
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(Sunset3, {{bins}})), quantiles');
+        palette = 'Sunset3';
+        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}})), quantiles');
       } else if (shape === 'L' || shape === 'J') {
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(Sunset2, {{bins}}), headtails)');
+        palette = 'Sunset2';
+        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}}), headtails)');
       } else if (shape === 'A') {
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(Geyser, {{bins}})), quantiles');
+        palette = 'Geyser';
+        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}})), quantiles');
       } else if (shape === 'C' || shape === 'U') {
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(Emrld1, {{bins}}), jenks)');
+        palette = 'Emrld1';
+        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}}), jenks)');
       } else {
         style = style.replace('{{defaultColor}}', 'ramp([{{column}}], colorbrewer({{color}}, {{bins}}))');
       }
     } else if (geometryType === 'marker') {
       if (shape === 'F') {
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(RedOr1, {{bins}})), quantiles');
+        palette = 'RedOr1';
+        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}})), quantiles');
       } else if (shape === 'L' || shape === 'J') {
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(Sunset2, {{bins}}), headtails)');
+        palette = 'Sunset2';
+        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}}), headtails)');
       } else if (shape === 'A') {
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(Geyser, {{bins}})), quantiles)');
+        palette = 'Geyser';
+        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}})), quantiles)');
       } else if (shape === 'C' || shape === 'U') {
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(BluYl1, {{bins}}), jenks)');
+        palette = 'BluYl1';
+        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}}), jenks)');
       } else {
         style = style.replace('{{markerWidth}}', 'ramp([{{column}}], {{min}}, {{max}}, {{bins}})');
       }
     } else {
       style = style.replace('{{markerWidth}}', 'ramp([{{column}}], {{min}}, {{max}}, {{bins}})');
     }
+    if (palette) this.set('palette', palette);
     return style;
   }
 });
