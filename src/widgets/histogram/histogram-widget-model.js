@@ -24,6 +24,8 @@ module.exports = WidgetModel.extend({
     this.dataviewModel.once('change', function () {
       if (this.get('autoStyle')) {
         this.autoStyle();
+      } else {
+        this.autoStyler.set('palette', null);
       }
     }, this);
   },
