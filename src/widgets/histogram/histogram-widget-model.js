@@ -11,8 +11,12 @@ module.exports = WidgetModel.extend({
     {
       autoStyle: false,
       normalized: false,
-      min: null,
-      max: null
+      min: function () {
+        return this.dataviewModel.get('start');
+      },
+      max: function () {
+        return this.dataviewModel.get('end');
+      }
     },
     WidgetModel.prototype.defaultState
   ),
@@ -35,6 +39,14 @@ module.exports = WidgetModel.extend({
   },
 
   autoStyle: function () {
+    var layer = this.dataviewModel.layer;
+    if (!layer.get('initialStyle')) {
+      var initialStyle = layer.get('cartocss');
+      if (!initialStyle && layer.get('meta')) {
+        initialStyle = layer.get('meta').cartocss;
+      }
+      layer.set('initialStyle', initialStyle);
+    }
     var style = this.autoStyler.getStyle();
     this.dataviewModel.layer.set('cartocss', style);
     this.set('autoStyle', true);

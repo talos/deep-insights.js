@@ -1,78 +1,104 @@
 var AutoStyler = require('./auto-styler');
-var _ = require('underscore');
 var HistogramAutoStyler = AutoStyler.extend({
   getStyle: function () {
-    var preservedWidth = this.getPreservedWidth();
-    var style = '';
-    var colors = ['YlGnBu', 'Greens', 'Reds', 'Blues'];
-    var color = colors[Math.floor(Math.random() * colors.length)];
-    var stylesByGeometry = this.STYLE_TEMPLATE;
-    var geometryType = this.layer.getGeometryType();
-    if (geometryType) {
-      style = this._getHistGeometry(geometryType)
-        .replace('{{layername}}', '#layer{');
-    } else {
-      for (var symbol in stylesByGeometry) {
-        style += this._getHistGeometry(symbol)
-          .replace('{{layername}}', this._getLayerHeader(symbol));
-      }
-    }
-    if (!_.isEmpty(preservedWidth)) {
-      style = style.replace('{{markerWidth}}', preservedWidth);
-    } else {
-      style = style.replace('{{markerWidth}}', 7);
-    }
-    return style.replace(/{{column}}/g, this.dataviewModel.get('column'))
-      .replace(/{{bins}}/g, this.dataviewModel.get('bins'))
-      .replace(/{{color}}/g, color)
-      .replace(/{{min}}/g, 1)
-      .replace(/{{max}}/g, 20)
-      .replace(/{{ramp}}/g, '')
-      .replace(/{{defaultColor}}/g, '#000');
+    var style = this.layer.get('initialStyle');
+    if (!style) return;
+    ['marker-fill', 'polygon-fill', 'line-color'].forEach(function (item) {
+      style = style.replace(new RegExp('\\' + 's' + item + ':.*?;', 'g'), this.getColorLine(item));
+    }.bind(this));
+    return style;
   },
 
-  _getHistGeometry: function (geometryType) {
-    var style = this.STYLE_TEMPLATE[geometryType];
+  getColorLine: function (sym) {
     var shape = this.dataviewModel.getDistributionType();
-    var palette;
-    if (geometryType === 'polygon') {
-      if (shape === 'F') {
-        palette = 'Sunset3';
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}})), quantiles');
-      } else if (shape === 'L' || shape === 'J') {
-        palette = 'Sunset2';
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}}), headtails)');
-      } else if (shape === 'A') {
-        palette = 'Geyser';
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}})), quantiles');
-      } else if (shape === 'C' || shape === 'U') {
-        palette = 'Emrld1';
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}}), jenks)');
-      } else {
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], colorbrewer({{color}}, {{bins}}))');
-      }
-    } else if (geometryType === 'marker') {
-      if (shape === 'F') {
-        palette = 'RedOr1';
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}})), quantiles');
-      } else if (shape === 'L' || shape === 'J') {
-        palette = 'Sunset2';
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}}), headtails)');
-      } else if (shape === 'A') {
-        palette = 'Geyser';
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}})), quantiles)');
-      } else if (shape === 'C' || shape === 'U') {
-        palette = 'BluYl1';
-        style = style.replace('{{defaultColor}}', 'ramp([{{column}}], cartocolor(' + palette + ', {{bins}}), jenks)');
-      } else {
-        style = style.replace('{{markerWidth}}', 'ramp([{{column}}], {{min}}, {{max}}, {{bins}})');
-      }
-    } else {
-      style = style.replace('{{markerWidth}}', 'ramp([{{column}}], {{min}}, {{max}}, {{bins}})');
-    }
-    if (palette) this.set('palette', palette);
-    return style;
+    var scales = HistogramAutoStyler.SCALES_MAP[sym][shape];
+    return '/* __autostyling_colors__ */\n' + sym + ': ramp([' + this.dataviewModel.get('column') +
+                 '], cartocolor(' + scales.palette + ', ' + this.dataviewModel.get('bins') +
+                 ')), ' + scales.quantification + ')\n/* __autostyling_colors__ */\n';
   }
+
 });
 
+HistogramAutoStyler.SCALES_MAP = {
+  'polygon-fill': {
+    'F': {
+      palette: 'Sunset3',
+      quantification: 'quantiles'
+    },
+    'L': {
+      palette: 'Sunset2',
+      quantification: 'headtails'
+    },
+    'J': {
+      palette: 'Sunset2',
+      quantification: 'headtails'
+    },
+    'A': {
+      palette: 'Geyser',
+      quantification: 'quantiles'
+    },
+    'C': {
+      palette: 'Emrld1',
+      quantification: 'jenks'
+    },
+    'U': {
+      palette: 'Emrld1',
+      quantification: 'jenks'
+    }
+  },
+  'line-color': {
+    'F': {
+      palette: 'Sunset3',
+      quantification: 'quantiles'
+    },
+    'L': {
+      palette: 'Sunset2',
+      quantification: 'headtails'
+    },
+    'J': {
+      palette: 'Sunset2',
+      quantification: 'headtails'
+    },
+    'A': {
+      palette: 'Geyser',
+      quantification: 'quantiles'
+    },
+    'C': {
+      palette: 'Emrld1',
+      quantification: 'jenks'
+    },
+    'U': {
+      palette: 'Emrld1',
+      quantification: 'jenks'
+    }
+  },
+  'marker-fill': {
+    'F': {
+      palette: 'RedOr1',
+      quantification: 'quantiles'
+    },
+    'L': {
+      palette: 'Sunset2',
+      quantification: 'headtails'
+    },
+    'J': {
+      palette: 'Sunset2',
+      quantification: 'headtails'
+    },
+    'A': {
+      palette: 'Geyser',
+      quantification: 'quantiles'
+    },
+    'C': {
+      palette: 'BluYl1',
+      quantification: 'jenks'
+    },
+    'U': {
+      palette: 'BluYl1',
+      quantification: 'jenks'
+    }
+  }
+};
+
 module.exports = HistogramAutoStyler;
+
