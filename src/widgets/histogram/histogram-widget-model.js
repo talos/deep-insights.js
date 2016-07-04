@@ -32,6 +32,18 @@ module.exports = WidgetModel.extend({
         this.autoStyler.set('palette', null);
       }
     }, this);
+    this.dataviewModel.layer.bind('change:meta', function (model, style) {
+      var ramp = style.match(/\[\s*?.*?[><=]\s*?\d*?\s*?\]\s*?\{\s*?.*?:\s*?#.*?;\s*?}/g);
+      if (ramp.length > 1) {
+        var bounds = ramp.map(function (el) {
+          return {
+            color: el.match(/#....../g)[0],
+            upper_value: parseInt(el.match(/>.*?]/g)[0].replace(']', '').replace('>', ''), 10)
+          };
+        });
+        this.autoStyler.set('palette', bounds);
+      }
+    });
   },
 
   _onCollapsedChange: function (m, isCollapsed) {
