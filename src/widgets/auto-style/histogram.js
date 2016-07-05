@@ -14,7 +14,7 @@ var HistogramAutoStyler = AutoStyler.extend({
     var scales = HistogramAutoStyler.SCALES_MAP[sym][shape];
     return '/* __autostyling_colors__ */\n' + sym + ': ramp([' + this.dataviewModel.get('column') +
                  '], cartocolor(' + scales.palette + ', ' + this.dataviewModel.get('bins') +
-                 ')), ' + scales.quantification + ')\n/* __autostyling_colors__ */\n';
+                 ')), ' + scales.quantification + ');\n/* __autostyling_colors__ */\n';
   }
 
 });

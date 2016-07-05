@@ -212,6 +212,7 @@ module.exports = cdb.core.View.extend({
     this.chart.attr('height', height);
     this.leftHandle.attr('height', height);
     this.rightHandle.attr('height', height);
+    this.updateYScale();
 
     this.reset();
   },
@@ -1028,7 +1029,7 @@ module.exports = cdb.core.View.extend({
       })
       .attr('y', self.chartHeight())
       .attr('height', 0)
-      .attr('width', Math.max(0, this.barWidth - 1));
+      .attr('width', Math.max(0.5, this.barWidth - 1));
 
     bars
       .transition()
@@ -1110,7 +1111,7 @@ module.exports = cdb.core.View.extend({
           return yScale(d.freq);
         }
       })
-      .attr('width', Math.max(0, barWidth - 1))
+      .attr('width', Math.max(0.5, barWidth - 1))
       .attr('height', function (d) {
         if (_.isEmpty(d)) {
           return 0;
